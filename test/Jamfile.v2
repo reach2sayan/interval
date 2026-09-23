@@ -21,28 +21,30 @@ project
 # bring in rules for testing
 import testing ;
 
-{
-  test-suite numeric/interval :
-    [ compile integer.cpp ]
+# One test per line, in the flat form understood both by B2 and by the
+# superproject's boost_test_jamfile() CMake helper (the bracketed test-suite
+# form was silently ignored by the latter, so the CMake build had no tests).
 
-    [ run add.cpp      ]
-    [ run det.cpp      ]
-    [ run fmod.cpp     ]
-    [ run msvc_x64_flags.cpp : : : <build>no <toolset>msvc:<build>yes ]
-    [ run mul.cpp      ]
-    [ run overflow.cpp ]
-    [ run pi.cpp       ]
-    [ run pow.cpp      ]
+compile integer.cpp ;
 
-    [ run cmp.cpp ]
-    [ run cmp_exn.cpp : : : <library>/boost/logic//boost_logic ]
-    [ run cmp_exp.cpp ]
-    [ run cmp_lex.cpp ]
-    [ run cmp_set.cpp ]
- # https://github.com/boostorg/interval/issues/15
- #  [ run cmp_tribool.cpp ]
-    [ run test_float.cpp
-      : : : <build>yes <toolset>msvc-10.0:<build>no ]
-            # https://github.com/boostorg/interval/issues/17
-  ;
-}
+run add.cpp ;
+run det.cpp ;
+run fmod.cpp ;
+run msvc_x64_flags.cpp
+  : : : <build>no <toolset>msvc:<build>yes ;
+run mul.cpp ;
+run overflow.cpp ;
+run pi.cpp ;
+run pow.cpp ;
+
+run cmp.cpp ;
+run cmp_exn.cpp
+  : : : <library>/boost/logic//boost_logic ;
+run cmp_exp.cpp ;
+run cmp_lex.cpp ;
+run cmp_set.cpp ;
+# https://github.com/boostorg/interval/issues/15
+# run cmp_tribool.cpp ;
+run test_float.cpp
+  : : : <build>yes <toolset>msvc-10.0:<build>no ;
+        # https://github.com/boostorg/interval/issues/17
