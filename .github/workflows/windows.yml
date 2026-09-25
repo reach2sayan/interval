@@ -1,0 +1,144 @@
+# Copyright 2020-2021 Peter Dimov
+# Copyright 2021 Andrey Semashev
+# Copyright 2021-2026 Alexander Grund
+# Copyright 2022-2025 James E. King III
+# Copyright 2026 Sayan
+#
+# Distributed under the Boost Software License, Version 1.0.
+# (See accompanying file LICENSE_1_0.txt or copy at http://boost.org/LICENSE_1_0.txt)
+#
+# Self-contained CI.  It runs the same jobs on the same platforms as the
+# Boost.CI reusable workflow this repository used before, with the settings
+# it passed to it:
+#   - MinGW disabled (https://github.com/boostorg/interval/issues/41)
+#   - clang before 11 excluded: clang < 10 does not support the necessary
+#     floating point options (-frounding-math) and clang 10 has a C++20
+#     ambiguous operator resolution bug
+#     (https://github.com/llvm/llvm-project/issues/43110)
+---
+name: Windows
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - develop
+      - bugfix/**
+      - feature/**
+      - fix/**
+      - pr/**
+    paths-ignore:
+      - LICENSE
+      - meta/**
+      - README.md
+
+concurrency:
+  group: ${{ github.ref }}:${{ github.workflow_ref }}
+  cancel-in-progress: true
+
+env:
+  SELF: numeric/interval
+  GIT_FETCH_JOBS: 8
+  NET_RETRY_COUNT: 5
+  B2_LINK: shared,static
+  B2_VARIANT: debug,release
+
+jobs:
+  windows:
+    name: windows (${{ matrix.name || matrix.toolset }}, ${{ matrix.cxxstd }}, ${{ matrix.address-model }}, ${{ matrix.os }}${{ matrix.target-os && ', cygwin' || '' }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+
+    defaults:
+      run:
+        shell: cmd
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { toolset: msvc-14.3, cxxstd: "14,17,20,latest", address-model: "32,64", os: windows-2022 }
+          - { toolset: msvc-14.5, cxxstd: "14,17,20,latest", address-model: "32,64", os: windows-2025-vs2026 }
+          - { toolset: msvc-14.5, cxxstd: "14,17,20,latest", address-model: "64",    os: windows-11-arm }
+          - { name: "Collect coverage w/ VS 2022", coverage: "yes",
+              toolset: msvc-14.3, cxxstd: "latest",          address-model: "64",    os: windows-2022 }
+          - { name: "Collect coverage w/ VS 2026", coverage: "yes",
+              toolset: msvc-14.5, cxxstd: "latest",          address-model: "64",    os: windows-2025-vs2026 }
+          - { toolset: clang-win, cxxstd: "14,17,latest",    address-model: "32,64", os: windows-2025, b2_flags: "embed-manifest-via=linker" }
+          - { toolset: gcc,       cxxstd: "11,14,17,2a",     address-model: "64",    os: windows-2022 }
+          - { toolset: gcc,       cxxstd: "11,14,17,2a",     address-model: "32",    os: windows-2025, target-os: cygwin }
+          - { toolset: gcc,       cxxstd: "11,14,17,2a",     address-model: "64",    os: windows-2025, target-os: cygwin }
+
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Setup cygwin
+        if: ${{ matrix.target-os == 'cygwin' }}
+        uses: cygwin/cygwin-install-action@3f0a3f9f988f7e96b8c18098ae05eaec175f5b52 # v6.1
+        with:
+          site: ${{ matrix.address-model == '64' && 'https://www.mirrorservice.org/sites/sourceware.org/pub/cygwin' || 'https://ftp-stud.hs-esslingen.de/pub/Mirrors/sources.redhat.com/cygwin-archive/20221123' }}
+          packages: coreutils, gcc-g++, libstdc++6, make, moreutils, openssl, libbz2-devel, libgmp-devel, libicu-devel, libjpeg-devel, libmpfr-devel, libpng-devel, libssl-devel, libtiff-devel, libxslt-devel, libzstd-devel
+          platform: ${{ matrix.address-model == '64' && 'x86_64' || 'x86' }}
+
+      - name: Setup Boost
+        run: |
+            set BOOST_BRANCH=develop
+            if "%GITHUB_BASE_REF%" == "" (set TARGET_BRANCH=%GITHUB_REF%) else (set TARGET_BRANCH=%GITHUB_BASE_REF%)
+            for /f %%i in ("%TARGET_BRANCH%") do if "%%~nxi" == "master" set BOOST_BRANCH=master
+            echo BOOST_BRANCH: %BOOST_BRANCH%
+            cd .. || exit /b 1
+            git clone -b %BOOST_BRANCH% --depth 1 https://github.com/boostorg/boost.git boost-root || exit /b 1
+            cd boost-root || exit /b 1
+            git submodule update -q --init tools/boostdep || exit /b 1
+            xcopy /s /e /q /I %GITHUB_WORKSPACE% libs\numeric\interval || exit /b 1
+            python tools/boostdep/depinst/depinst.py --include benchmark --include example --include examples --include tools --git_args "--jobs %GIT_FETCH_JOBS%" %SELF% || exit /b 1
+            echo BOOST_ROOT=%cd%>> %GITHUB_ENV%
+            cmd /c bootstrap
+            if not %ERRORLEVEL% == 0 (type bootstrap.log & exit /b 1)
+            b2 -d0 headers
+
+      - name: Run tests
+        if: '!matrix.coverage'
+        run: |
+            cd /d %BOOST_ROOT%
+            b2 --abbreviate-paths libs/%SELF%/test toolset=${{ matrix.toolset }} cxxstd=${{ matrix.cxxstd }} address-model=${{ matrix.address-model }} ${{ matrix.target-os && format('target-os={0}', matrix.target-os) || '' }} link=%B2_LINK% variant=%B2_VARIANT% -j3 ${{ matrix.b2_flags }}
+
+      - name: Collect coverage
+        if: matrix.coverage
+        shell: powershell
+        run: |
+            choco install opencppcoverage
+            $env:Path += ";C:\Program Files\OpenCppCoverage"
+            mkdir __out
+            # Run b2 from a batch file: OpenCppCoverage quotes each argument, which breaks an inline "cd && b2"
+            Set-Content -Path __out\run_tests.bat -Value "cd /d ${env:BOOST_ROOT} && b2 --abbreviate-paths libs/${env:SELF}/test toolset=${{ matrix.toolset }} cxxstd=${{ matrix.cxxstd }} address-model=${{ matrix.address-model }} link=${env:B2_LINK} variant=debug -j3"
+            $cmd ='OpenCppCoverage.exe --export_type cobertura:__out/cobertura.xml --modules "{0}" ' -f ${env:BOOST_ROOT}
+            $cmd += (Get-ChildItem -Name "${env:GITHUB_WORKSPACE}\include\boost").ForEach({'--sources "boost\{0}"' -f $_}) -join " "
+            $cmd += " --sources ${env:BOOST_ROOT}\libs\numeric\interval "
+            $exclusions = @(
+              # Lines marked with LCov or coverity exclusion comments
+              '.*// LCOV_EXCL_LINE'
+              '.*// coverity\[dead_error_line\]'
+              # Lines containing only braces
+              '\s*[}{]*\s*'
+              # Lines containing only else (and opt. braces)
+              '\s*(\} )?else( \{)?\s*'
+            )
+            $cmd += $exclusions.ForEach({"--excluded_line_regex '{0}'" -f $_}) -join " "
+            $cmd += " --cover_children -- cmd.exe /c ${PWD}\__out\run_tests.bat"
+            $cmd
+            Invoke-Expression $cmd
+
+      - name: Upload coverage
+        if: matrix.coverage
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        with:
+          disable_search: true
+          files: __out/cobertura.xml
+          name: Github Actions (Windows)
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
