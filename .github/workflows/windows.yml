@@ -86,52 +86,52 @@ jobs:
 
       - name: Setup Boost
         run: |
-          set BOOST_BRANCH=develop
-          if "%GITHUB_BASE_REF%" == "" (set TARGET_BRANCH=%GITHUB_REF%) else (set TARGET_BRANCH=%GITHUB_BASE_REF%)
-          for /f %%i in ("%TARGET_BRANCH%") do if "%%~nxi" == "master" set BOOST_BRANCH=master
-          echo BOOST_BRANCH: %BOOST_BRANCH%
-          cd .. || exit /b 1
-          git clone -b %BOOST_BRANCH% --depth 1 https://github.com/boostorg/boost.git boost-root || exit /b 1
-          cd boost-root || exit /b 1
-          git submodule update -q --init tools/boostdep || exit /b 1
-          xcopy /s /e /q /I %GITHUB_WORKSPACE% libs\numeric\interval || exit /b 1
-          python tools/boostdep/depinst/depinst.py --include benchmark --include example --include examples --include tools --git_args "--jobs %GIT_FETCH_JOBS%" %SELF% || exit /b 1
-          echo BOOST_ROOT=%cd%>> %GITHUB_ENV%
-          cmd /c bootstrap
-          if not %ERRORLEVEL% == 0 (type bootstrap.log & exit /b 1)
-          b2 -d0 headers
+            set BOOST_BRANCH=develop
+            if "%GITHUB_BASE_REF%" == "" (set TARGET_BRANCH=%GITHUB_REF%) else (set TARGET_BRANCH=%GITHUB_BASE_REF%)
+            for /f %%i in ("%TARGET_BRANCH%") do if "%%~nxi" == "master" set BOOST_BRANCH=master
+            echo BOOST_BRANCH: %BOOST_BRANCH%
+            cd .. || exit /b 1
+            git clone -b %BOOST_BRANCH% --depth 1 https://github.com/boostorg/boost.git boost-root || exit /b 1
+            cd boost-root || exit /b 1
+            git submodule update -q --init tools/boostdep || exit /b 1
+            xcopy /s /e /q /I %GITHUB_WORKSPACE% libs\numeric\interval || exit /b 1
+            python tools/boostdep/depinst/depinst.py --include benchmark --include example --include examples --include tools --git_args "--jobs %GIT_FETCH_JOBS%" %SELF% || exit /b 1
+            echo BOOST_ROOT=%cd%>> %GITHUB_ENV%
+            cmd /c bootstrap
+            if not %ERRORLEVEL% == 0 (type bootstrap.log & exit /b 1)
+            b2 -d0 headers
 
       - name: Run tests
         if: '!matrix.coverage'
         run: |
-          cd /d %BOOST_ROOT%
-          b2 --abbreviate-paths libs/%SELF%/test toolset=${{ matrix.toolset }} cxxstd=${{ matrix.cxxstd }} address-model=${{ matrix.address-model }} ${{ matrix.target-os && format('target-os={0}', matrix.target-os) || '' }} link=%B2_LINK% variant=%B2_VARIANT% -j3 ${{ matrix.b2_flags }}
+            cd /d %BOOST_ROOT%
+            b2 --abbreviate-paths libs/%SELF%/test toolset=${{ matrix.toolset }} cxxstd=${{ matrix.cxxstd }} address-model=${{ matrix.address-model }} ${{ matrix.target-os && format('target-os={0}', matrix.target-os) || '' }} link=%B2_LINK% variant=%B2_VARIANT% -j3 ${{ matrix.b2_flags }}
 
       - name: Collect coverage
         if: matrix.coverage
         shell: powershell
         run: |
-          choco install opencppcoverage
-          $env:Path += ";C:\Program Files\OpenCppCoverage"
-          mkdir __out
-          # Run b2 from a batch file: OpenCppCoverage quotes each argument, which breaks an inline "cd && b2"
-          Set-Content -Path __out\run_tests.bat -Value "cd /d ${env:BOOST_ROOT} && b2 --abbreviate-paths libs/${env:SELF}/test toolset=${{ matrix.toolset }} cxxstd=${{ matrix.cxxstd }} address-model=${{ matrix.address-model }} link=${env:B2_LINK} variant=debug -j3"
-          $cmd ='OpenCppCoverage.exe --export_type cobertura:__out/cobertura.xml --modules "{0}" ' -f ${env:BOOST_ROOT}
-          $cmd += (Get-ChildItem -Name "${env:GITHUB_WORKSPACE}\include\boost").ForEach({'--sources "boost\{0}"' -f $_}) -join " "
-          $cmd += " --sources ${env:BOOST_ROOT}\libs\numeric\interval "
-          $exclusions = @(
-            # Lines marked with LCov or coverity exclusion comments
-            '.*// LCOV_EXCL_LINE'
-            '.*// coverity\[dead_error_line\]'
-            # Lines containing only braces
-            '\s*[}{]*\s*'
-            # Lines containing only else (and opt. braces)
-            '\s*(\} )?else( \{)?\s*'
-          )
-          $cmd += $exclusions.ForEach({"--excluded_line_regex '{0}'" -f $_}) -join " "
-          $cmd += " --cover_children -- cmd.exe /c ${PWD}\__out\run_tests.bat"
-          $cmd
-          Invoke-Expression $cmd
+            choco install opencppcoverage
+            $env:Path += ";C:\Program Files\OpenCppCoverage"
+            mkdir __out
+            # Run b2 from a batch file: OpenCppCoverage quotes each argument, which breaks an inline "cd && b2"
+            Set-Content -Path __out\run_tests.bat -Value "cd /d ${env:BOOST_ROOT} && b2 --abbreviate-paths libs/${env:SELF}/test toolset=${{ matrix.toolset }} cxxstd=${{ matrix.cxxstd }} address-model=${{ matrix.address-model }} link=${env:B2_LINK} variant=debug -j3"
+            $cmd ='OpenCppCoverage.exe --export_type cobertura:__out/cobertura.xml --modules "{0}" ' -f ${env:BOOST_ROOT}
+            $cmd += (Get-ChildItem -Name "${env:GITHUB_WORKSPACE}\include\boost").ForEach({'--sources "boost\{0}"' -f $_}) -join " "
+            $cmd += " --sources ${env:BOOST_ROOT}\libs\numeric\interval "
+            $exclusions = @(
+              # Lines marked with LCov or coverity exclusion comments
+              '.*// LCOV_EXCL_LINE'
+              '.*// coverity\[dead_error_line\]'
+              # Lines containing only braces
+              '\s*[}{]*\s*'
+              # Lines containing only else (and opt. braces)
+              '\s*(\} )?else( \{)?\s*'
+            )
+            $cmd += $exclusions.ForEach({"--excluded_line_regex '{0}'" -f $_}) -join " "
+            $cmd += " --cover_children -- cmd.exe /c ${PWD}\__out\run_tests.bat"
+            $cmd
+            Invoke-Expression $cmd
 
       - name: Upload coverage
         if: matrix.coverage

@@ -62,53 +62,53 @@ jobs:
       matrix:
         include:
           # libstdc++
-          - { compiler: gcc-4.7, cxxstd: "11",                os: ubuntu-latest, container: "ubuntu:16.04" }
-          - { compiler: gcc-4.8, cxxstd: "11",                os: ubuntu-latest, container: "ubuntu:16.04" }
-          - { compiler: gcc-4.9, cxxstd: "11",                os: ubuntu-latest, container: "ubuntu:16.04" }
-          - { compiler: gcc-5,   cxxstd: "11,14,1z",          os: ubuntu-latest, container: "ubuntu:18.04" }
-          - { compiler: gcc-6,   cxxstd: "11,14,17",          os: ubuntu-latest, container: "ubuntu:18.04" }
-          - { compiler: gcc-7,   cxxstd: "11,14,17",          os: ubuntu-latest, container: "ubuntu:20.04" }
-          - { compiler: gcc-8,   cxxstd: "11,14,17,2a",       os: ubuntu-latest, container: "ubuntu:20.04" }
-          - { compiler: gcc-9,   cxxstd: "11,14,17,2a",       os: ubuntu-22.04 }
-          - { compiler: gcc-10,  cxxstd: "11,14,17,20",       os: ubuntu-22.04 }
-          - { compiler: gcc-11,  cxxstd: "11,14,17,20",       os: ubuntu-22.04 }
-          - { compiler: gcc-12,  cxxstd: "11,14,17,20",       os: ubuntu-22.04 }
-          - { compiler: gcc-13,  cxxstd: "11,14,17,20,2b",    os: ubuntu-24.04 }
+          - { compiler: gcc-4.7,   cxxstd: "11",                os: ubuntu-latest, container: "ubuntu:16.04" }
+          - { compiler: gcc-4.8,   cxxstd: "11",                os: ubuntu-latest, container: "ubuntu:16.04" }
+          - { compiler: gcc-4.9,   cxxstd: "11",                os: ubuntu-latest, container: "ubuntu:16.04" }
+          - { compiler: gcc-5,     cxxstd: "11,14,1z",          os: ubuntu-latest, container: "ubuntu:18.04" }
+          - { compiler: gcc-6,     cxxstd: "11,14,17",          os: ubuntu-latest, container: "ubuntu:18.04" }
+          - { compiler: gcc-7,     cxxstd: "11,14,17",          os: ubuntu-latest, container: "ubuntu:20.04" }
+          - { compiler: gcc-8,     cxxstd: "11,14,17,2a",       os: ubuntu-latest, container: "ubuntu:20.04" }
+          - { compiler: gcc-9,     cxxstd: "11,14,17,2a",       os: ubuntu-22.04 }
+          - { compiler: gcc-10,    cxxstd: "11,14,17,20",       os: ubuntu-22.04 }
+          - { compiler: gcc-11,    cxxstd: "11,14,17,20",       os: ubuntu-22.04 }
+          - { compiler: gcc-12,    cxxstd: "11,14,17,20",       os: ubuntu-22.04 }
+          - { compiler: gcc-13,    cxxstd: "11,14,17,20,2b",    os: ubuntu-24.04 }
           - { name: "Coverage w/ GCC on Linux", coverage: "yes",
-              compiler: gcc-13,  cxxstd: "2b",                os: ubuntu-24.04, install: "g++-13-multilib gcc-multilib", address-model: "32,64" }
+              compiler: gcc-13,    cxxstd: "2b",                os: ubuntu-24.04, install: "g++-13-multilib gcc-multilib", address-model: "32,64" }
           - { name: "GCC w/ sanitizers", sanitize: "yes",
-              compiler: gcc-13,  cxxstd: "11,14,17,20",       os: ubuntu-24.04 }
-          - { compiler: gcc-14,  cxxstd: "11,14,17,20,23",    os: ubuntu-24.04 }
-          - { compiler: gcc-15,  cxxstd: "11,14,17,20,23,2c", os: ubuntu-latest, container: "ubuntu:26.04" }
-          - { compiler: gcc-16,  cxxstd: "11,14,17,20,23,26", os: ubuntu-latest, container: "ubuntu:26.04" }
-          - { compiler: clang-11, cxxstd: "11,14,17,20",       os: ubuntu-latest, container: "ubuntu:20.04" }
-          - { compiler: clang-12, cxxstd: "11,14,17,20",       os: ubuntu-latest, container: "ubuntu:20.04" }
-          - { compiler: clang-13, cxxstd: "11,14,17,20",       os: ubuntu-latest, container: "ubuntu:22.04" }
-          - { compiler: clang-14, cxxstd: "11,14,17,20",       os: ubuntu-latest, container: "ubuntu:22.04" }
-          - { compiler: clang-15, cxxstd: "11,14,17,20",       os: ubuntu-latest, container: "ubuntu:22.04" }
-          - { compiler: clang-16, cxxstd: "11,14,17,20,2b",    os: ubuntu-latest, container: "ubuntu:24.04" }
-          - { compiler: clang-17, cxxstd: "11,14,17,20,23",    os: ubuntu-latest, container: "ubuntu:24.04" }
-          - { compiler: clang-18, cxxstd: "11,14,17,20,23,2c", os: ubuntu-24.04 }
-          - { compiler: clang-19, cxxstd: "11,14,17,20,23,2c", os: ubuntu-24.04 }
-          - { compiler: clang-20, cxxstd: "11,14,17,20,23,2c", os: ubuntu-latest, container: "ubuntu:25.04" }
-          - { compiler: clang-21, cxxstd: "11,14,17,20,23,2c", os: ubuntu-latest, container: "ubuntu:26.04" }
-          - { compiler: clang-22, cxxstd: "11,14,17,20,23,2c", os: ubuntu-latest, container: "ubuntu:26.04" }
+              compiler: gcc-13,    cxxstd: "11,14,17,20",       os: ubuntu-24.04 }
+          - { compiler: gcc-14,    cxxstd: "11,14,17,20,23",    os: ubuntu-24.04 }
+          - { compiler: gcc-15,    cxxstd: "11,14,17,20,23,2c", os: ubuntu-latest, container: "ubuntu:26.04" }
+          - { compiler: gcc-16,    cxxstd: "11,14,17,20,23,26", os: ubuntu-latest, container: "ubuntu:26.04" }
+          - { compiler: clang-11,  cxxstd: "11,14,17,20",       os: ubuntu-latest, container: "ubuntu:20.04" }
+          - { compiler: clang-12,  cxxstd: "11,14,17,20",       os: ubuntu-latest, container: "ubuntu:20.04" }
+          - { compiler: clang-13,  cxxstd: "11,14,17,20",       os: ubuntu-latest, container: "ubuntu:22.04" }
+          - { compiler: clang-14,  cxxstd: "11,14,17,20",       os: ubuntu-latest, container: "ubuntu:22.04" }
+          - { compiler: clang-15,  cxxstd: "11,14,17,20",       os: ubuntu-latest, container: "ubuntu:22.04" }
+          - { compiler: clang-16,  cxxstd: "11,14,17,20,2b",    os: ubuntu-latest, container: "ubuntu:24.04" }
+          - { compiler: clang-17,  cxxstd: "11,14,17,20,23",    os: ubuntu-latest, container: "ubuntu:24.04" }
+          - { compiler: clang-18,  cxxstd: "11,14,17,20,23,2c", os: ubuntu-24.04 }
+          - { compiler: clang-19,  cxxstd: "11,14,17,20,23,2c", os: ubuntu-24.04 }
+          - { compiler: clang-20,  cxxstd: "11,14,17,20,23,2c", os: ubuntu-latest, container: "ubuntu:25.04" }
+          - { compiler: clang-21,  cxxstd: "11,14,17,20,23,2c", os: ubuntu-latest, container: "ubuntu:26.04" }
+          - { compiler: clang-22,  cxxstd: "11,14,17,20,23,2c", os: ubuntu-latest, container: "ubuntu:26.04" }
           - { compiler: icpx-2025, cxxstd: "11,14,17,20,23,2c", os: ubuntu-latest, container: "intel/oneapi-hpckit:2025.2.2-0-devel-ubuntu24.04" }
           # libc++
           - { name: "Clang w/ sanitizers", sanitize: "yes", stdlib: "libc++",
-              compiler: clang-12, cxxstd: "11,14,17,20",       os: ubuntu-latest, container: "ubuntu:20.04" }
+              compiler: clang-12,  cxxstd: "11,14,17,20",       os: ubuntu-latest, container: "ubuntu:20.04" }
           # MacOS
           - { name: "MacOS sanitize w/ clang", sanitize: "yes",
-              compiler: clang,    cxxstd: "11,14,17,20,2b",    os: macos-14 }
-          - { compiler: clang-16, cxxstd: "11,14,17,20,2b",    os: macos-15, xcode_app: "Xcode_16.2" }
-          - { compiler: clang-18, cxxstd: "11,14,17,20,2b",    os: macos-15 }
-          - { compiler: clang-20, cxxstd: "11,14,17,20,23,2c", os: macos-26 }
+              compiler: clang,     cxxstd: "11,14,17,20,2b",    os: macos-14 }
+          - { compiler: clang-16,  cxxstd: "11,14,17,20,2b",    os: macos-15, xcode_app: "Xcode_16.2" }
+          - { compiler: clang-18,  cxxstd: "11,14,17,20,2b",    os: macos-15 }
+          - { compiler: clang-20,  cxxstd: "11,14,17,20,23,2c", os: macos-26 }
           # Arm64
           - { name: "ARM64 w/ GCC",
-              compiler: gcc-13,   cxxstd: "11,14,17,20,2b",    os: ubuntu-24.04-arm }
+              compiler: gcc-13,    cxxstd: "11,14,17,20,2b",    os: ubuntu-24.04-arm }
           # Big-Endian
           - { name: "Big Endian w/ Clang on s390x", multiarch: "yes",
-              compiler: clang,    cxxstd: "17",                os: ubuntu-latest, distro: fedora, edition: "34", arch: s390x }
+              compiler: clang,     cxxstd: "17",                os: ubuntu-latest, distro: fedora, edition: "34", arch: s390x }
 
     container:
       image: ${{ matrix.container }}
