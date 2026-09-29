@@ -22,10 +22,39 @@ project
 
 # bring in rules for testing
 import testing ;
+import os ;
+import path ;
+import regex ;
+
+# Each public header must compile on its own.  These compile-only tests are
+# slow and add little per configuration, so they are off by default; set the
+# BOOST_NUMERIC_INTERVAL_TEST_SELF_CONTAINED_HEADERS environment variable to
+# run them.
+path-constant INTERVAL_INCLUDE_DIR : ../include ;
+
+local self_contained_tests ;
+if [ os.environ BOOST_NUMERIC_INTERVAL_TEST_SELF_CONTAINED_HEADERS ]
+{
+  local headers_path = [ path.make $(INTERVAL_INCLUDE_DIR)/boost/numeric ] ;
+  for local file in [ path.glob-tree $(headers_path) : *.hpp : detail ]
+  {
+    local h = [ path.relative-to $(headers_path) $(file) ] ;
+    local requirements = <define>BOOST_NUMERIC_INTERVAL_TEST_HEADER=$(h) <dependency>$(file) ;
+    if $(h) = interval/ext/x86_fast_rounding_control.hpp
+    {
+      # x86 only by design.
+      requirements += [ check-target-builds /boost/architecture//x86 : : <build>no ] ;
+    }
+    self_contained_tests += [ compile self_contained_header.cpp
+      : $(requirements)
+      : [ regex.replace self_contained-$(h) "[/.]" "-" ] ] ;
+  }
+}
 
 {
   test-suite numeric/interval :
     [ compile integer.cpp ]
+    $(self_contained_tests)
 
     [ run add.cpp      ]
     [ run det.cpp      ]
