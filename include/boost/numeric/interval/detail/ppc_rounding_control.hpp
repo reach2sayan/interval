@@ -64,6 +64,7 @@ struct ppc_rounding_control
 extern "C" {
   float rintf(float);
   double rint(double);
+  long double rintl(long double);
 }
 #endif
 
@@ -111,7 +112,7 @@ struct rounding_control<long double>:
 #endif
     return r_;
   }
-  static long double to_int(const long double& r) { return rint(r); }
+  static long double to_int(const long double& r) { return rintl(r); }
 };
 
 } // namespace interval_lib
