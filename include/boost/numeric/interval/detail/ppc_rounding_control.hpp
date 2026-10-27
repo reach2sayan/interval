@@ -107,8 +107,10 @@ struct rounding_control<long double>:
 #else
     // Which register can hold a 128-bit long double depends on the ABI: FPRs
     // for IBM double-double, a VSX register for IEEE 128-bit. Clang accepts
-    // neither in all cases, hence the memory fallback.
-    __asm__ __volatile__ ("" : "+wa,d,m"(r_));
+    // neither in all cases, hence the memory fallback. GCC rejects a "+"
+    // operand with alternatives when the value is a constant, so the output
+    // and the input are given separately.
+    __asm__ __volatile__ ("" : "=wa,d,m"(r_) : "0,0,0"(r_));
 #endif
     return r_;
   }
