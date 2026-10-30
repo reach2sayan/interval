@@ -41,9 +41,7 @@ typedef change_rounding<interval<int>, save_state_nothing<my_rounded_arith> >::t
 void test_long_double() {
   typedef interval<long double> L;
   if (std::numeric_limits<long double>::digits < 62) return;
-  // volatile, so that the operands are not constants at compile time
-  volatile long double vbig = 1152921504606846977.0L, vone = 1;  // 2^60 + 1
-  long double big = vbig, one = vone;
+  long double big = 1152921504606846977.0L, one = 1;  // 2^60 + 1
   BOOST_TEST(in_zero(fmod(L(big), L(one))));
 }
 
