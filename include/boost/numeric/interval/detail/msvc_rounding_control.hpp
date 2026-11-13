@@ -89,6 +89,20 @@ struct x86_rounding
   { mode = msvc2hard(_control87(0, 0)); }
   static void set_rounding_mode(const rounding_mode mode)
   {
+#if defined(_M_IX86)
+    // Drop pending flags of the exceptions mode unmasks, or the next x87
+    // instruction would trap.
+    unsigned short const unmasked = ~mode & 0x3f;
+    if (unmasked) {
+      unsigned short env[14];
+      __asm { fnstsw env[4] }  // byte offset: env[2]
+      if (env[2] & unmasked) {
+        __asm { fnstenv env }
+        env[2] &= ~(unmasked | 0x8080);
+        __asm { fldenv env }
+      }
+    }
+#endif
     _control87(hard2msvc(mode),
       _MCW_EM | _MCW_RC
 #if !defined(_M_AMD64) && !defined(_M_ARM) && !defined(_M_ARM64)

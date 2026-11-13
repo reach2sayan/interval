@@ -29,9 +29,24 @@ struct x86_rounding
   typedef unsigned short rounding_mode;
 
   // The "memory" clobber keeps GCC from moving x87 arithmetic across the
-  // change of rounding mode (issue #41).
+  // change of rounding mode (issue #41).  Pending flags of exceptions that
+  // mode unmasks are dropped, or the next x87 instruction would trap.
   static void set_rounding_mode(const rounding_mode& mode)
-  { __asm__ __volatile__ ("fldcw %0" : : "m"(mode) : "memory"); }
+  {
+    unsigned short const unmasked = ~mode & 0x3f;
+    if (unmasked) {
+      struct { unsigned short w[14]; } env;  // GCC < 4.8 rejects an array "m"
+      __asm__ __volatile__ ("fnstsw %0" : "=m"(env.w[2]));
+      if (env.w[2] & unmasked) {
+        __asm__ __volatile__ ("fnstenv %0" : "=m"(env));
+        env.w[0] = mode;
+        env.w[2] &= ~(unmasked | 0x8080);  // and the summary and busy bits
+        __asm__ __volatile__ ("fldenv %0" : : "m"(env) : "memory");
+        return;
+      }
+    }
+    __asm__ __volatile__ ("fldcw %0" : : "m"(mode) : "memory");
+  }
 
   static void get_rounding_mode(rounding_mode& mode)
   { __asm__ __volatile__ ("fnstcw %0" : "=m"(mode)); }
