@@ -51,6 +51,11 @@ struct x86_rounding
   static void get_rounding_mode(rounding_mode& mode)
   { __asm__ __volatile__ ("fnstcw %0" : "=m"(mode)); }
 
+  static unsigned sse_get()
+  { unsigned r; __asm__ __volatile__ ("stmxcsr %0" : "=m"(r)); return r; }
+  static void sse_set(unsigned r)
+  { __asm__ __volatile__ ("ldmxcsr %0" : : "m"(r) : "memory"); }
+
   template<class T>
   static T to_int(T r)
   {

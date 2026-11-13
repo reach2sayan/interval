@@ -47,6 +47,9 @@ struct x86_rounding
   static void set_rounding_mode(const rounding_mode mode)
   { _control87(mode, 0xffff); } 
   static double to_int(const double& x) { return rint(x); }
+  // No SSE arithmetic.
+  static unsigned sse_get() { return 0; }
+  static void sse_set(unsigned) {}
 };
 
 } // namespace detail

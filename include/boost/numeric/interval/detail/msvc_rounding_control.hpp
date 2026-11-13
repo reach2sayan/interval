@@ -16,6 +16,7 @@
 #endif
 
 #include <float.h>      // MSVC rounding control
+#include <xmmintrin.h>  // MXCSR
 
 // Although the function is called _control87, it seems to work for
 // other FPUs too, so it does not have to be changed to _controlfp.
@@ -117,6 +118,15 @@ struct x86_rounding
     );
   }
   static double to_int(const double& x) { return rint(x); }
+
+#if defined(_M_IX86) && _M_IX86_FP == 0
+  // /arch:IA32: no SSE arithmetic, and maybe no SSE unit.
+  static unsigned sse_get() { return 0; }
+  static void sse_set(unsigned) {}
+#else
+  static unsigned sse_get() { return _mm_getcsr(); }
+  static void sse_set(unsigned r) { _mm_setcsr(r); }
+#endif
 };
 
 } // namespace detail

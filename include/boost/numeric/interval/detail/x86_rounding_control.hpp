@@ -46,12 +46,30 @@ struct fpu_rounding_modes
 // hardware default is 0x037f (0x1000 only has a meaning on 287)
 static const fpu_rounding_modes rnd_mode = { 0x137f, 0x177f, 0x1b7f, 0x1f7f };
 
+// Sets the x87 unit and MXCSR: every exception masked, FTZ/DAZ off.  Restoring
+// keeps the MXCSR flags raised inside for the exceptions the caller had masked.
+// MXCSR is read before the x87 write, since _control87 clears its flags.
 struct x86_rounding_control: x86_rounding
 {
-  static void to_nearest()  { set_rounding_mode(rnd_mode.to_nearest);  }
-  static void downward()    { set_rounding_mode(rnd_mode.downward);    }
-  static void upward()      { set_rounding_mode(rnd_mode.upward);      }
-  static void toward_zero() { set_rounding_mode(rnd_mode.toward_zero); }
+  struct rounding_mode { x86_rounding::rounding_mode x87; unsigned sse; };
+  static void get_rounding_mode(rounding_mode& mode)
+  { x86_rounding::get_rounding_mode(mode.x87); mode.sse = sse_get(); }
+  static void set_rounding_mode(const rounding_mode& mode)
+  {
+    unsigned const sse = sse_get();
+    x86_rounding::set_rounding_mode(mode.x87);
+    sse_set(mode.sse | (sse & mode.sse >> 7 & 0x3f));
+  }
+  static void set(x86_rounding::rounding_mode x87, unsigned rc)
+  {
+    unsigned const sse = sse_get();
+    x86_rounding::set_rounding_mode(x87);
+    sse_set((sse & 0x3f) | 0x1f80 | rc << 13);
+  }
+  static void to_nearest()  { set(rnd_mode.to_nearest, 0);  }
+  static void downward()    { set(rnd_mode.downward, 1);    }
+  static void upward()      { set(rnd_mode.upward, 2);      }
+  static void toward_zero() { set(rnd_mode.toward_zero, 3); }
 };
 #endif // BOOST_NUMERIC_INTERVAL_USE_C99_SUBSYSTEM
 
