@@ -43,8 +43,9 @@ struct fpu_rounding_modes
 };
 
 // exceptions masked, extended precision
-// hardware default is 0x037f (0x1000 only has a meaning on 287)
-static const fpu_rounding_modes rnd_mode = { 0x137f, 0x177f, 0x1b7f, 0x1f7f };
+// hardware default is 0x037f.  0x1000 only has a meaning on 287; it stays
+// clear, since flipping it makes fldcw slow (about 200 cycles on Zen 3).
+static const fpu_rounding_modes rnd_mode = { 0x037f, 0x077f, 0x0b7f, 0x0f7f };
 
 // Sets the x87 unit and MXCSR: every exception masked, FTZ/DAZ off.  Restoring
 // keeps the MXCSR flags raised inside for the exceptions the caller had masked.
