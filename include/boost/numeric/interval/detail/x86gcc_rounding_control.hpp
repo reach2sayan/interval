@@ -36,6 +36,30 @@ struct x86_rounding
   static void get_rounding_mode(rounding_mode& mode)
   { __asm__ __volatile__ ("fnstcw %0" : "=m"(mode)); }
 
+  // x87 status bits 0-7: the flags, stack fault and error summary.
+  static unsigned short x87_status_get()
+  { unsigned short s; __asm__ __volatile__ ("fnstsw %0" : "=m"(s) : : "memory"); return s & 0xff; }
+  // Loads the control word and status bits 0-7 together, so that no flag
+  // raised inside is pending while mode unmasks it (it would trap).
+  static void x87_restore(const rounding_mode& mode, unsigned short s)
+  {
+    if (x87_status_get() == s) { set_rounding_mode(mode); return; }
+    if (s == 0) {
+      __asm__ __volatile__ ("fnclex\n\tfldcw %0" : : "m"(mode) : "memory");
+      return;
+    }
+    struct { unsigned short w[14]; } env;  // GCC < 4.8 rejects an array "m"
+    __asm__ __volatile__ ("fnstenv %0" : "=m"(env));
+    env.w[0] = mode;
+    env.w[2] = (env.w[2] & ~0x80ff) | s;  // and clear the busy bit
+    __asm__ __volatile__ ("fldenv %0" : : "m"(env) : "memory");
+  }
+
+  static unsigned sse_get()
+  { unsigned r; __asm__ __volatile__ ("stmxcsr %0" : "=m"(r)); return r; }
+  static void sse_set(unsigned r)
+  { __asm__ __volatile__ ("ldmxcsr %0" : : "m"(r) : "memory"); }
+
   template<class T>
   static T to_int(T r)
   {
@@ -43,6 +67,13 @@ struct x86_rounding
     __asm__ __volatile__ ("frndint" : "=&t"(r_) : "0"(r));
     return r_;
   }
+  // On the SSE unit, so the x87 flags stay as the caller left them.
+#if defined(__SSE_MATH__)
+  static float to_int(float r) { return __builtin_rintf(r); }
+#endif
+#if defined(__SSE2_MATH__)
+  static double to_int(double r) { return __builtin_rint(r); }
+#endif
 };
 
 } // namespace detail
