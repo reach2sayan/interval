@@ -27,8 +27,8 @@ namespace detail {
 // not see a rounding-mode change as a dependency, so it may compute the same
 // expression once for both ends of an interval (GCC bug 34678); reading one
 // operand afresh after the mode change makes each evaluation depend on a
-// value the compiler cannot reuse. Used by the rounded_arith_std primitives
-// and the sqrt bodies below.
+// value the compiler cannot reuse. Used by the rounded_arith_std primitives,
+// the rounded_arith_opp conversions and the sqrt bodies below.
 template<class T> inline T reload_operand(const T& x) { return x; }
 inline float reload_operand(const float& x)
 { volatile float v = x; return v; }
@@ -161,8 +161,10 @@ struct rounded_arith_opp: Rounding {
     return r
 # define BOOST_UP(EXPR) return this->force_rounding(EXPR)
 # define BOOST_UP_NEG(EXPR) return -this->force_rounding(EXPR)
-  template<class U> T conv_down(U const &v) { BOOST_UP_NEG(-v); }
-  template<class U> T conv_up  (U const &v) { BOOST_UP(v); }
+  template<class U> T conv_down(U const &v)
+  { BOOST_UP_NEG(-detail::reload_operand(v)); }
+  template<class U> T conv_up  (U const &v)
+  { BOOST_UP(detail::reload_operand(v)); }
   T add_down(const T& x, const T& y) { BOOST_UP_NEG((-x) - y); }
   T sub_down(const T& x, const T& y) { BOOST_UP_NEG(y - x); }
   T mul_down(const T& x, const T& y) { BOOST_UP_NEG(x * (-y)); }
