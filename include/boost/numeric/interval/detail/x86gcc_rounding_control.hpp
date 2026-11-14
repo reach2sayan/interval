@@ -63,6 +63,13 @@ struct x86_rounding
     __asm__ __volatile__ ("frndint" : "=&t"(r_) : "0"(r));
     return r_;
   }
+  // On the SSE unit, so the x87 flags stay as the caller left them.
+#if defined(__SSE_MATH__)
+  static float to_int(float r) { return __builtin_rintf(r); }
+#endif
+#if defined(__SSE2_MATH__)
+  static double to_int(double r) { return __builtin_rint(r); }
+#endif
 };
 
 } // namespace detail
