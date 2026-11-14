@@ -29,27 +29,31 @@ struct x86_rounding
   typedef unsigned short rounding_mode;
 
   // The "memory" clobber keeps GCC from moving x87 arithmetic across the
-  // change of rounding mode (issue #41).  Pending flags of exceptions that
-  // mode unmasks are dropped, or the next x87 instruction would trap.
+  // change of rounding mode (issue #41).
   static void set_rounding_mode(const rounding_mode& mode)
-  {
-    unsigned short const unmasked = ~mode & 0x3f;
-    if (unmasked) {
-      struct { unsigned short w[14]; } env;  // GCC < 4.8 rejects an array "m"
-      __asm__ __volatile__ ("fnstsw %0" : "=m"(env.w[2]));
-      if (env.w[2] & unmasked) {
-        __asm__ __volatile__ ("fnstenv %0" : "=m"(env));
-        env.w[0] = mode;
-        env.w[2] &= ~(unmasked | 0x8080);  // and the summary and busy bits
-        __asm__ __volatile__ ("fldenv %0" : : "m"(env) : "memory");
-        return;
-      }
-    }
-    __asm__ __volatile__ ("fldcw %0" : : "m"(mode) : "memory");
-  }
+  { __asm__ __volatile__ ("fldcw %0" : : "m"(mode) : "memory"); }
 
   static void get_rounding_mode(rounding_mode& mode)
   { __asm__ __volatile__ ("fnstcw %0" : "=m"(mode)); }
+
+  // x87 status bits 0-7: the flags, stack fault and error summary.
+  static unsigned short x87_status_get()
+  { unsigned short s; __asm__ __volatile__ ("fnstsw %0" : "=m"(s) : : "memory"); return s & 0xff; }
+  // Loads the control word and status bits 0-7 together, so that no flag
+  // raised inside is pending while mode unmasks it (it would trap).
+  static void x87_restore(const rounding_mode& mode, unsigned short s)
+  {
+    if (x87_status_get() == s) { set_rounding_mode(mode); return; }
+    if (s == 0) {
+      __asm__ __volatile__ ("fnclex\n\tfldcw %0" : : "m"(mode) : "memory");
+      return;
+    }
+    struct { unsigned short w[14]; } env;  // GCC < 4.8 rejects an array "m"
+    __asm__ __volatile__ ("fnstenv %0" : "=m"(env));
+    env.w[0] = mode;
+    env.w[2] = (env.w[2] & ~0x80ff) | s;  // and clear the busy bit
+    __asm__ __volatile__ ("fldenv %0" : : "m"(env) : "memory");
+  }
 
   static unsigned sse_get()
   { unsigned r; __asm__ __volatile__ ("stmxcsr %0" : "=m"(r)); return r; }

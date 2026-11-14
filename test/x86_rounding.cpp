@@ -1,8 +1,8 @@
 /* Boost test/x86_rounding.cpp
  * x86 rounding control sets everything in the unit that computes T: the
  * rounding mode, all exceptions masked, FTZ/DAZ off and, on x87, extended
- * precision (#23, #35).  The caller's state comes back on exit, with the flags
- * raised inside except those of exceptions the caller had unmasked.
+ * precision (#23, #35).  The caller's state, flags included, comes back
+ * exactly on exit: flags raised inside are dropped.
  *
  * Copyright 2026 Sayan Samanta
  *
@@ -142,12 +142,14 @@ void test_state() {
     unsigned const out_ctl = control<T>(), out_flags = flags<T>();
     set_default();
     BOOST_TEST_EQ(in_ctl, inside_control<T>(m));
-    BOOST_TEST_EQ(in_flags, 0x01u);
+    // Switching writes MXCSR whole, flags cleared; the x87 flags stay.
+    BOOST_TEST_EQ(in_flags, on_sse<T>::value ? 0u : 0x01u);
     BOOST_TEST_EQ(out_ctl, user_control<T>(0));
     BOOST_TEST_EQ(out_flags, 0x01u);
   }
 
-  // Interval arithmetic: inexact raised inside comes back.
+  // Interval arithmetic: inexact raised inside is dropped, the caller's
+  // invalid flag stays.
   typedef boost::numeric::interval<T> I;
   enter_user<T>(0);
   I q = I(runtime(T(1))) / I(runtime(T(3)));
@@ -155,7 +157,15 @@ void test_state() {
   set_default();
   BOOST_TEST(q.lower() < q.upper());
   BOOST_TEST_EQ(ctl, user_control<T>(0));
-  BOOST_TEST_EQ(fl, 0x21u);
+  BOOST_TEST_EQ(fl, 0x01u);
+
+  // The same from a caller with no flags raised.
+  set_default();
+  I r = I(runtime(T(1))) / I(runtime(T(3)));
+  unsigned const fl0 = flags<T>();
+  set_default();
+  BOOST_TEST(r.lower() < r.upper());
+  BOOST_TEST_EQ(fl0, 0u);
 }
 
 // FTZ/DAZ in the caller's state must not reach interval arithmetic.

@@ -90,20 +90,6 @@ struct x86_rounding
   { mode = msvc2hard(_control87(0, 0)); }
   static void set_rounding_mode(const rounding_mode mode)
   {
-#if defined(_M_IX86)
-    // Drop pending flags of the exceptions mode unmasks, or the next x87
-    // instruction would trap.
-    unsigned short const unmasked = ~mode & 0x3f;
-    if (unmasked) {
-      unsigned short env[14];
-      __asm { fnstsw env[4] }  // byte offset: env[2]
-      if (env[2] & unmasked) {
-        __asm { fnstenv env }
-        env[2] &= ~(unmasked | 0x8080);
-        __asm { fldenv env }
-      }
-    }
-#endif
     _control87(hard2msvc(mode),
       _MCW_EM | _MCW_RC
 #if !defined(_M_AMD64) && !defined(_M_ARM) && !defined(_M_ARM64)
@@ -118,6 +104,29 @@ struct x86_rounding
     );
   }
   static double to_int(const double& x) { return rint(x); }
+
+#if defined(_M_IX86)
+  // x87 status bits 0-7: the flags, stack fault and error summary.
+  static unsigned short x87_status_get()
+  { unsigned short s; __asm { fnstsw s } return s & 0xff; }
+  // Loads the control word and status bits 0-7 together, so that no flag
+  // raised inside is pending while mode unmasks it (it would trap).
+  static void x87_restore(const rounding_mode mode, unsigned short s)
+  {
+    if (x87_status_get() == s) { set_rounding_mode(mode); return; }
+    if (s == 0) { __asm { fnclex } __asm { fldcw mode } return; }
+    unsigned short env[14];
+    __asm { fnstenv env }
+    env[0] = mode;
+    env[2] = (env[2] & ~0x80ff) | s;  // and clear the busy bit
+    __asm { fldenv env }
+  }
+#else
+  // No x87 arithmetic on x64.
+  static unsigned short x87_status_get() { return 0; }
+  static void x87_restore(const rounding_mode mode, unsigned short)
+  { set_rounding_mode(mode); }
+#endif
 
 #if defined(_M_IX86) && _M_IX86_FP == 0
   // /arch:IA32: no SSE arithmetic, and maybe no SSE unit.
