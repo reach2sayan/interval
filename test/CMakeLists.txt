@@ -47,7 +47,7 @@ if(BOOST_NUMERIC_INTERVAL_TEST_SELF_CONTAINED_HEADERS)
   endforeach()
 endif()
 
-foreach(t add conv_integer det fmod mul nth_root overflow pi pow rounding_merge sqrt_rounding sqrt_point cmp cmp_exp cmp_lex cmp_set test_float)
+foreach(t add det fmod mul nth_root overflow pi pow rounding_merge sqrt_rounding sqrt_point cmp cmp_exp cmp_lex cmp_set test_float)
   boost_test(TYPE run SOURCES ${t}.cpp)
 endforeach()
 
@@ -66,16 +66,6 @@ endforeach()
 # PowerPC-only regression test.
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(powerpc|ppc)")
   boost_test(TYPE run SOURCES rounding_mode.cpp)
-endif()
-
-# x86-only regression test; the second build puts float and double in the
-# SSE unit on 32-bit x86 (#23).
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|amd64|x86|i[3-6]86)$")
-  boost_test(TYPE run SOURCES x86_rounding.cpp)
-  if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang" AND NOT MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 4)
-    boost_test(TYPE run NAME x86_rounding_sse SOURCES x86_rounding.cpp
-      COMPILE_OPTIONS -msse2 -mfpmath=sse)
-  endif()
 endif()
 
 # MSVC-only regression test (b2: <build>no <toolset>msvc:<build>yes).

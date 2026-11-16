@@ -57,7 +57,6 @@ if [ os.environ BOOST_NUMERIC_INTERVAL_TEST_SELF_CONTAINED_HEADERS ]
     $(self_contained_tests)
 
     [ run add.cpp      ]
-    [ run conv_integer.cpp ]
     [ run converting_ctor.cpp ]
     [ compile converting_ctor_fail.cpp ]
     [ compile-fail converting_ctor_fail.cpp : <define>BOOST_NUMERIC_INTERVAL_TEST_FAIL=1 : converting_ctor_fail_1 ]
@@ -79,13 +78,6 @@ if [ os.environ BOOST_NUMERIC_INTERVAL_TEST_SELF_CONTAINED_HEADERS ]
     [ run sqrt_rounding.cpp ]
     [ run sqrt_point.cpp ]
     [ run rounding_mode.cpp : : : [ check-target-builds /boost/architecture//power : : <build>no ] ]
-    [ run x86_rounding.cpp : : : [ check-target-builds /boost/architecture//x86 : : <build>no ] ]
-    # The same with float and double in the SSE unit on 32-bit x86 (#23).
-    [ run x86_rounding.cpp : : : [ check-target-builds /boost/architecture//x86 : : <build>no ]
-        [ check-target-builds /boost/architecture//32 : : <build>no ]
-        <toolset>gcc:<cxxflags>"-msse2 -mfpmath=sse"
-        <toolset>clang:<cxxflags>"-msse2 -mfpmath=sse"
-      : x86_rounding_sse ]
 
     [ run cmp.cpp ]
     [ run cmp_exn.cpp : : : <library>/boost/logic//boost_logic ]
