@@ -10,6 +10,8 @@
 #ifndef BOOST_NUMERIC_INTERVAL_ROUNDING_HPP
 #define BOOST_NUMERIC_INTERVAL_ROUNDING_HPP
 
+#include <boost/numeric/interval/detail/requires_cxx11.hpp>
+
 namespace boost {
 namespace numeric {
 namespace interval_lib {

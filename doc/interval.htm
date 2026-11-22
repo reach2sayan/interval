@@ -56,6 +56,11 @@
   <code>interval&lt;T&gt;</code> just happens to pick the default policies
   for the type <code>T</code>.</p>
 
+  <p>C++03 support is deprecated since Boost 1.94 and will be removed in
+  Boost 1.95, after which the library requires C++11. When compiled as
+  C++03, the headers print a message to that effect; defining
+  <code>BOOST_DISABLE_PRAGMA_MESSAGE</code> silences it.</p>
+
   <p><span style="color: #FF0000; font-weight: bold">Warning!</span>
   Guaranteed interval arithmetic for native floating-point format is not
   supported on every combination of processor, operating system, and

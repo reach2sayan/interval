@@ -12,6 +12,7 @@
 #define BOOST_NUMERIC_INTERVAL_DETAIL_BUGS
 
 #include <boost/config.hpp>
+#include <boost/numeric/interval/detail/requires_cxx11.hpp>
 
 #if defined(__GLIBC__) && (defined(__USE_MISC) || defined(__USE_XOPEN_EXTENDED) || defined(__USE_ISOC99)) && !defined(__ICC)
 #  define BOOST_HAS_INV_HYPERBOLIC

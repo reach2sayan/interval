@@ -10,6 +10,8 @@
 #ifndef BOOST_NUMERIC_INTERVAL_CHECKING_HPP
 #define BOOST_NUMERIC_INTERVAL_CHECKING_HPP
 
+#include <boost/numeric/interval/detail/requires_cxx11.hpp>
+
 #include <stdexcept>
 #include <string>
 #include <cassert>
